@@ -20,7 +20,7 @@ SELECT title, `description` -- Description is a reserved word, using ` is a way 
     
 /* 4. Encuentra el título de todas las películas que tengan una duración mayor a 120 minutos.*/
 
-SELECT title, length 
+SELECT title -- ,length: can be added for verification
 	FROM film
     WHERE length > 120; -- The length is smallint type
     
@@ -37,7 +37,7 @@ SELECT first_name, last_name
 
 /* 7. Encuentra los nombres de los actores que tengan un actor_id entre 10 y 20.*/
 
-SELECT first_name, last_name, actor_id
+SELECT first_name, last_name
 	FROM actor
     WHERE actor_id BETWEEN 10 AND 20; -- actod_id is smallint type
     
@@ -51,14 +51,14 @@ SELECT title
 /* 9. Encuentra la cantidad total de películas en cada clasificación de la tabla film y muestra la
 clasificación junto con el recuento.*/
 
-SELECT rating, COUNT(rating)
+SELECT rating, COUNT(rating) AS 'total_films'
 	FROM film
     GROUP BY rating;
     
 /* 10. Encuentra la cantidad total de películas alquiladas por cada cliente y muestra el ID del cliente, su
 nombre y apellido junto con la cantidad de películas alquiladas.*/
 
-SELECT COUNT(r.inventory_id), r.customer_id, c.first_name, c.last_name
+SELECT r.customer_id, c.first_name, c.last_name,  COUNT(r.inventory_id) AS 'total_rented'
 FROM rental AS r
 	INNER JOIN customer as c
     ON r.customer_id = c.customer_id
@@ -67,7 +67,19 @@ FROM rental AS r
 /* 11. Encuentra la cantidad total de películas alquiladas por categoría y muestra el nombre de la categoría
 junto con el recuento de alquileres. HELP */
 
-SELECT COUNT(r.inventory_id), f.`name`
+SELECT c.name AS 'category_name', COUNT(r.rental_id) AS 'rental_count'
+	FROM rental AS r
+	INNER JOIN inventory AS i
+    ON i.inventory_id = r.inventory_id
+		INNER JOIN film AS f 
+        ON f.film_id = i.film_id
+			INNER JOIN film_category AS fc 
+            ON fc.film_id = f.film_id
+				INNER JOIN category AS c 
+                ON c.category_id = fc.category_id
+GROUP BY c.category_id;
+
+SELECT COUNT(r.inventory_id), f.name AS 'category_name'
 	FROM rental AS r
 	INNER JOIN inventory AS i
 	ON r.inventory_id = i.inventory_id
@@ -86,7 +98,7 @@ SELECT rating, ROUND(AVG(length),0) AS 'length_average' -- the lenght average is
 
 /* 13. Encuentra el nombre y apellido de los actores que aparecen en la película con title "Indian Love".*/
 
-SELECT fa.film_id, fa.actor_id, f.title, a.first_name, a.last_name -- either inner join or left join could be used here
+SELECT a.first_name, a.last_name -- , f.title  for verification, either inner join or left join could be used here
 	FROM film_actor as fa
 	INNER JOIN film AS f
 	ON fa.film_id = f.film_id
@@ -96,7 +108,7 @@ SELECT fa.film_id, fa.actor_id, f.title, a.first_name, a.last_name -- either inn
     
 /* 14. Muestra el título de todas las películas que contengan la palabra "dog" o "cat" en su descripción.*/
 
-SELECT title, `description`
+SELECT title -- , `description` for verification
 	FROM film
 	WHERE `description` LIKE ('%DOG%') OR `description` LIKE '%CAT%';
     
@@ -188,3 +200,49 @@ WHERE r.rental_id IN (SELECT rental_id
 /* 23. Encuentra el nombre y apellido de los actores que no han actuado en ninguna película de la categoría
 "Horror". Utiliza una subconsulta para encontrar los actores que han actuado en películas de la
 categoría "Horror" y luego exclúyelos de la lista de actores.*/
+
+
+SELECT DISTINCT (CONCAT(a.first_name, ' ', a.last_name)) AS 'full_name' -- First I included all the actors independend od film category, by joining actors and films, then:
+	FROM actor as a
+	INNER JOIN film_actor as fa
+    ON a.actor_id = fa.actor_id
+		INNER JOIN film as f
+        ON f.film_id = fa.film_id
+		WHERE a.actor_id NOT IN (SELECT fa.actor_id -- : used NOT IN to exclude the Horror actors from final output
+								FROM film_actor AS fa
+								INNER JOIN film AS f
+								ON fa.film_id = f.film_id
+									INNER JOIN film_category AS fc
+									ON f.film_id = fc.film_id
+									INNER JOIN category AS c
+									ON fc.category_id = c.category_id
+									WHERE c.name = 'Horror');
+/* for table reference: 
+SELECT first_name, last_name, actor_id
+FROM actor;
+
+SELECT film_id, actor_id
+FROM film_actor;
+
+SELECT film_id
+FROM film;
+
+SELECT category_id, film_id
+FROM film_category;
+
+SELECT category_id, `name`
+FROM category
+WHERE c.`name` = 'horror';*/
+
+/* 24. Encuentra el título de las películas que son comedias y tienen una duración mayor a 180 minutos en la tabla film.*/
+
+SELECT f.title -- , f.length, f.film_id, c.category_id, c.name : can be added for verification
+FROM film as f
+	INNER JOIN film_category as fc
+    ON f.film_id = fc.film_id
+    INNER JOIN category as c
+		ON c.category_id = fc.category_id
+        WHERE f.length > 180 AND fc.category_id IN (SELECT c.category_id
+													FROM category AS c
+                                                    WHERE c.name = 'comedy');
+
