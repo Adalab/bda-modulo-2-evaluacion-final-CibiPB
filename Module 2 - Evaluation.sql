@@ -93,3 +93,68 @@ SELECT fa.film_id, fa.actor_id, f.title, a.first_name, a.last_name -- either inn
     INNER JOIN actor AS a
     ON fa.actor_id = a.actor_id
     WHERE f.title = 'Indian Love';
+    
+/* 14. Muestra el título de todas las películas que contengan la palabra "dog" o "cat" en su descripción.*/
+
+SELECT title, `description`
+	FROM film
+	WHERE `description` LIKE ('%DOG%') OR `description` LIKE '%CAT%';
+    
+/* 15. Hay algún actor o actriz que no aparezca en ninguna película en la tabla film_actor.*/
+
+SELECT f.actor_id, a.actor_id
+	FROM film_actor AS f
+	RIGHT JOIN actor AS a -- Right Join to ensure the actores are listed even thougth they are not in the film_actor table.
+	ON f.actor_id = a.actor_id
+	WHERE f.actor_id IS NULL; -- to list any unmatched with the actor list.
+
+/* 16. Encuentra el título de todas las películas que fueron lanzadas entre el año 2005 y 2010. */
+
+
+SELECT title
+FROM film
+WHERE release_year BETWEEN 2005 AND 2010; -- Includes 2005 and 2010, but in the data, all movies are from 2006
+
+SELECT title, release_year -- confirmation
+FROM film
+WHERE release_year BETWEEN 2005 AND 2010;
+
+/* 17. Encuentra el título de todas las películas que son de la misma categoría que "Family".*/
+
+SELECT DISTINCT(f.title) -- add for verification: , c.`name` 
+	FROM film AS f
+	INNER JOIN film_category AS fc
+    ON f.film_id = fc.film_id
+		INNER JOIN category AS c
+        ON fc.category_id = c.category_id
+        WHERE c.`name` = ('Family'); 
+    
+
+/* 18. Muestra el nombre y apellido de los actores que aparecen en más de 10 películas. */
+
+SELECT  CONCAT(a.first_name,' ', a.last_name) AS 'actor_full_name'
+	FROM actor as a
+	INNER JOIN film_actor as f
+	ON a.actor_id = f.actor_id
+    GROUP BY actor_full_name -- Concat to combine the first and last names
+    HAVING COUNT(film_id) > 10
+    ORDER BY COUNT(film_id) ASC; -- added for clear results reading
+    
+/* 19. Encuentra el título de todas las películas que son "R" y tienen una duración mayor a 2 horas en la tabla film.*/
+
+SELECT title, length, rating
+	FROM film
+	WHERE length > 120 AND rating = "R"
+	ORDER BY length ASC;
+
+/* 20. Encuentra las categorías de películas que tienen un promedio de duración superior a 120 minutos y
+muestra el nombre de la categoría junto con el promedio de duración. */ 
+
+SELECT c.`name` AS category_name, ROUND(AVG(f.length),0) AS 'average_length'
+FROM film_category AS fc
+	INNER JOIN category AS c
+        ON fc.category_id = c.category_id
+        INNER JOIN film AS f
+        ON f.film_id = fc.film_id
+        GROUP BY category_name, c.category_id -- Grouping to by category to then sort by the length average of all the films on that category
+        HAVING average_length > 120 ;
